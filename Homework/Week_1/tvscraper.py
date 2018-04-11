@@ -40,11 +40,14 @@ def extract_tvseries(dom):
         tv_show.append(content.find('a').string)
         tv_show.append(content.find('strong').string)
         tv_show.append(content.find(class_='genre').string.lstrip('\n').rstrip())
+
+        # select all actors and put in one string
         actors = ''
         for star in content.select('a[href^="/name/"]'):
             actor = star.string
             actors = actors + actor + ', '
         actors = actors.strip(', ')
+
         tv_show.append(actors)
         tv_show.append(content.find(class_='runtime').string.strip(' min'))
         tv_series.append(tv_show)
