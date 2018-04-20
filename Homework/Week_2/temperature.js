@@ -1,29 +1,36 @@
 /**
 * Lucas Lumeij - 10353062
-* JavaScript intro
+* JavaScript line graph
 * Depicts data from text file in plot on html page.
 */
 
+// make XML Http request and link to text file with data
 var request = new XMLHttpRequest();
-var dataFile = "tempfile.txt";
+var dataFile = "https://Lucas-coder.github.io/dataprocessing/Homework/Week_2/tempfile.txt";
 
+// run code in mainEvents when page loaded
 request.addEventListener("load", mainEvents);
+// open text file with data
 request.open("GET", dataFile);
+// send request to server
 request.send();
 
 function mainEvents() {
 
-    // get text file
+    // get text file and split all lines (rows)
     var data = this.responseText;
     var lines = data.split('\n');
 
+    // make empty arrays to push date and temp elements to
     var dates = [];
     var temps = [];
 
+    // split each line into temps and dates and push these to separate arrays
     for (let line = 1; line < lines.length - 1; line++) {
         let chunks = lines[line].split(',');
-
+        // date chunk is left of comma
         dateString = chunks[0].trim();
+        // month 
         let month = Number(dateString.substring(4,6)) - 1;
         dates.push(new Date(dateString.substring(0,4), month, dateString.substring(6,8)));
         temps.push(Number(chunks[1]));
