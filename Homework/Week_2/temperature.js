@@ -1,90 +1,102 @@
-var data = document.getElementById('rawdata').innerHTML;
+function mainEvents() {
 
-var lines = data.split('\n');
+    // var data = document.getElementById('rawdata').innerHTML;
+    var data = this.responseText;
 
-var dates = [];
-var temps = [];
+    var lines = data.split('\n');
 
-for (let line = 1; line < lines.length - 1; line++) {
-    let chunks = lines[line].split(',');
+    var dates = [];
+    var temps = [];
 
-    dateString = chunks[0].trim();
-    let month = Number(dateString.substring(4,6)) - 1;
-    dates.push(new Date(dateString.substring(0,4), month, dateString.substring(6,8)));
-    temps.push(Number(chunks[1]));
-}
+    for (let line = 1; line < lines.length - 1; line++) {
+        let chunks = lines[line].split(',');
 
-var canvas = document.getElementById('lineplot');
-var context = canvas.getContext('2d');
+        dateString = chunks[0].trim();
+        let month = Number(dateString.substring(4,6)) - 1;
+        dates.push(new Date(dateString.substring(0,4), month, dateString.substring(6,8)));
+        temps.push(Number(chunks[1]));
+    }
 
-canvas.width = window.innerWidth - 100;
-canvas.height = window.innerHeight - 100;
+    var canvas = document.getElementById('lineplot');
+    var context = canvas.getContext('2d');
 
-var datesMilli = [];
-for (let date = 0; date < dates.length; date++) {
-    datesMilli.push(dates[date].getTime());
-}
+    canvas.width = 1000;
+    canvas.height = 600;
 
-var datesDomain = [Math.min(...datesMilli), Math.max(...datesMilli)];
-var tempsDomain = [Math.min(...temps), Math.max(...temps)];
+    var datesMilli = [];
+    for (let date = 0; date < dates.length; date++) {
+        datesMilli.push(dates[date].getTime());
+    }
 
-var widthRange = [40, canvas.width - 40];
-var heightRange = [canvas.height - 40, 40];
+    var datesDomain = [Math.min(...datesMilli), Math.max(...datesMilli)];
+    var tempsDomain = [Math.min(...temps), Math.max(...temps)];
 
-var datesTransform = createTransform(datesDomain, widthRange);
-var tempsTransform = createTransform(tempsDomain, heightRange);
+    var widthRange = [40, canvas.width - 40];
+    var heightRange = [canvas.height - 40, 40];
 
-// var gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-// gradient.addColorStop("0.3", "red");
-// gradient.addColorStop("0.6", "black");
-// gradient.addColorStop("1.0", "blue");
+    var datesTransform = createTransform(datesDomain, widthRange);
+    var tempsTransform = createTransform(tempsDomain, heightRange);
 
-context.beginPath();
-// context.moveTo(40, 40);
-// context.lineTo(40, canvas.height - 40);
-context.strokeStyle = '#000000';
-context.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+    // var gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+    // gradient.addColorStop("0.3", "red");
+    // gradient.addColorStop("0.6", "black");
+    // gradient.addColorStop("1.0", "blue");
 
-context.beginPath();
-for (let i = 0; i < temps.length; i++) {
-    let dateTransformed = datesTransform(datesMilli[i]);
-    let tempTransformed = tempsTransform(temps[i]);
+    context.beginPath();
+    // context.moveTo(40, 40);
+    // context.lineTo(40, canvas.height - 40);
+    context.strokeStyle = '#000000';
+    context.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
 
-    let x = Math.floor(dateTransformed);
-    let y = Math.floor(tempTransformed);
+    context.beginPath();
+    for (let i = 0; i < temps.length; i++) {
+        let dateTransformed = datesTransform(datesMilli[i]);
+        let tempTransformed = tempsTransform(temps[i]);
 
-    context.lineTo(x, y);
-}
+        let x = Math.floor(dateTransformed);
+        let y = Math.floor(tempTransformed);
 
-context.strokeStyle = '#0000ff';
-context.stroke();
+        context.lineTo(x, y);
+    }
 
-for (let temp = 0; temp < temps.length; temp++) {
-    context.fillText(Math.floor(temps[temp]*0.1), 2, tempsTransform(temps[temp]) - 10);
-}
+    context.strokeStyle = '#0000ff';
+    context.stroke();
 
-context.font = '25px Calibri';
-context.fillText('Temperaturen De Bilt 2017', 800, 70);
+    for (let temp = 0; temp < temps.length; temp++) {
+        context.fillText(Math.floor(temps[temp]*0.1), 2, tempsTransform(temps[temp]) - 10);
+    }
 
-function createTransform(domain, range) {
-    // domain is a two-element array of the data bounds [domain_min, domain_max]
-    // range is a two-element array of the screen bounds [range_min, range_max]
-    // this gives you two equations to solve:
-    // range_min = alpha * domain_min + beta
-    // range_max = alpha * domain_max + beta
-    // a solution would be:
+    context.font = '20px Calibri';
+    context.textAlign = "center";
+    context.fillText('Temperaturen De Bilt 2017', 500, 25);
 
-    var domain_min = domain[0];
-    var domain_max = domain[1];
-    var range_min = range[0];
-    var range_max = range[1];
+    function createTransform(domain, range) {
+        // domain is a two-element array of the data bounds [domain_min, domain_max]
+        // range is a two-element array of the screen bounds [range_min, range_max]
+        // this gives you two equations to solve:
+        // range_min = alpha * domain_min + beta
+        // range_max = alpha * domain_max + beta
+        // a solution would be:
 
-    // formulas to calculate the alpha and the beta
-   	var alpha = (range_max - range_min) / (domain_max - domain_min)
-    var beta = range_max - alpha * domain_max
+        var domain_min = domain[0];
+        var domain_max = domain[1];
+        var range_min = range[0];
+        var range_max = range[1];
 
-    // returns the function for the linear transformation (y= a * x + b)
-    return function(x) {
-        return alpha * x + beta;
+        // formulas to calculate the alpha and the beta
+       	var alpha = (range_max - range_min) / (domain_max - domain_min)
+        var beta = range_max - alpha * domain_max
+
+        // returns the function for the linear transformation (y= a * x + b)
+        return function(x) {
+            return alpha * x + beta;
+        }
     }
 }
+
+var request = new XMLHttpRequest();
+var dataFile = "tempfile.txt";
+
+request.addEventListener("load", mainEvents);
+request.open("GET", dataFile);
+request.send();
