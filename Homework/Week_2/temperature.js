@@ -1,7 +1,20 @@
+/**
+* Lucas Lumeij - 10353062
+* JavaScript intro
+* Depicts data from text file in plot on html page.
+*/
+
+var request = new XMLHttpRequest();
+var dataFile = "tempfile.txt";
+
+request.addEventListener("load", mainEvents);
+request.open("GET", dataFile);
+request.send();
+
 function mainEvents() {
 
+    // get text file
     var data = this.responseText;
-
     var lines = data.split('\n');
 
     var dates = [];
@@ -58,7 +71,7 @@ function mainEvents() {
 
         context.lineTo(x, y);
     }
-    
+
     context.strokeStyle = '#00ff00';
     context.stroke();
 
@@ -81,23 +94,23 @@ function mainEvents() {
     }
 
     context.font = '20px Calibri';
+    context.textAlign = "center";
     for (let i = 15; i < 365; i += 30) {
         let month = datesMonths[i];
-        let xSpot = datesTransform(datesMilli[i]);
-        context.fillText(month, xSpot, zeroLocation + 18);
+        let xLoc = datesTransform(datesMilli[i]);
+        context.fillText(month, xLoc, zeroLocation + 18);
     }
 
     context.font = '25px Calibri';
-    context.textAlign = "center";
     context.fillText('Temperatures De Bilt 2017', 500, 25);
 
     context.font = 'bold 20px Calibri';
     context.fillText('Time (days)', 500, 525);
 
     context.save();
-    context.translate(canvas.width - 1, 0);
-    context.rotate(3 * Math.PI/2);
-    context.fillText("Temperature (degrees celsius)", -300, -975);
+    context.translate(0, 0);
+    context.rotate(-Math.PI/2);
+    context.fillText("Temperature (degrees celsius)", -300, 20);
     context.restore();
 
     function createTransform(domain, range) {
@@ -123,10 +136,3 @@ function mainEvents() {
         }
     }
 }
-
-var request = new XMLHttpRequest();
-var dataFile = "tempfile.txt";
-
-request.addEventListener("load", mainEvents);
-request.open("GET", dataFile);
-request.send();
