@@ -1,0 +1,190 @@
+<!-- Lucas Lumeij - 10353062 -->
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <!-- import D3 and tooltip libraries  -->
+        <script type="text/javascript" src="d3/d3.v3.js"></script>
+        <script src="https://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+        <style>
+            body {
+                font-family: Calibri;
+            }
+
+            h1 {
+                color: red;
+            }
+
+            .bar {
+                fill: teal;
+            }
+
+            .bar:hover {
+               fill: blue;
+            }
+
+            .axis path,
+            .axis line {
+                fill: none;
+                stroke: black;
+                shape-rendering: crispEdges;
+            }
+
+            .axis text {
+                font-family: Calibri;
+                font-size: 11px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <script type="text/javascript">
+
+            // determine dimensions of svg
+            var fullWidth = 900;
+            var fullHeight = 400;
+
+            // create margins around future bar chart
+            var margin = {top: 10, right: 75, bottom: 125, left: 100};
+
+            // determine dimensions of bar chart
+            var width = fullWidth - margin.left - margin.right;
+            var height = fullHeight - margin.top - margin.bottom;
+
+            // give html page title
+            d3.select("head").append("title").text("Doodsoorzaken 2016");
+
+            // write informative text above bar chart and link to data source
+            d3.select("body").append("h1").text("Doodsoorzaken Nederland 2016");
+            d3.select("body")
+              .append("p1")
+              .html("<a href='https://opendata.cbs.nl/statline/#/CBS/nl/dataset/7052_95/table?ts=1524472282856' target='_blank'>Bron: CBS</a>");
+            d3.select("body").append("h2").text("Lucas Lumeij - 10353062");
+            d3.select("body")
+              .append("h3")
+              .text("De belangrijkste doodsoorzaken in 2016 in Nederland. De schaal van het aantal overledenen is logaritmisch.");
+
+            // create svg
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("width", fullWidth)
+                        .attr("height", fullHeight);
+
+            // import JSON data file and use data to make bar chart
+            d3.json("deaths.json", function(dataset) {
+
+                // convert strings into type Number
+                for (let i = 0; i < dataset.data.length; i++) {
+                     dataset.data[i].Doden = Number(dataset.data[i].Doden);
+                }
+
+                // create 'Doodsoorzaak' array to create xScale
+                var xDomain = [];
+                for (let i = 0; i < dataset.data.length; i++) {
+                    xDomain.push(dataset.data[i].Doodsoorzaak);
+                }
+
+                // make ordinal xScale (categories: causes of death)
+                var xScale = d3.scale.ordinal()
+                                     .domain(xDomain)
+                                     .rangeRoundBands([margin.left, width + margin.left], 0.1);
+
+                // determine min and max value of 'Doden' for domain
+                var deathsMin = d3.min(dataset.data, function(d) { return d.Doden });
+                var deathsMax = d3.max(dataset.data, function(d) { return d.Doden });
+
+                // make logarithmic yScale (number of deaths differ largely)
+                var yScale = d3.scale.log()
+                                     .domain([deathsMin, deathsMax])
+                                     .range([height + margin.top, margin.top])
+                                     .nice();
+
+                // create x axis variable and put at bottom
+                var xAxis = d3.svg.axis()
+                                  .scale(xScale)
+                                  .orient("bottom");
+
+                // create y axis variable and put at left
+                var yAxis = d3.svg.axis()
+                                  .scale(yScale)
+                                  .orient("left")
+                                  .ticks(5);
+
+                // create tip variable and determine data to show
+                // inspired by: https://github.com/caged/d3-tip
+                var tip = d3.tip()
+                            .attr('class', 'd3-tip')
+                            .html(function(d) { return d.Doden; });
+
+                // actually creating the tip
+                svg.call(tip);
+
+                // create all rectangles that function as bars
+                svg.selectAll("rect")
+                   .data(dataset.data)
+                   .enter()
+                   .append("rect")
+                   .attr("class", "bar")
+
+                   // determine coordinates where to start drawing
+                   .attr("x", function(d) {
+                       return xScale(d.Doodsoorzaak);
+                   })
+                   .attr("y", function(d) {
+                       return yScale(d.Doden);
+                   })
+
+                   // determine dimensions of each rectangle
+                   .attr("width", function(d) {
+                       return xScale.rangeBand();
+                   })
+                   .attr("height", function(d) {
+                       return height + margin.top - yScale(d.Doden)
+                   })
+
+                   // tip appears when cursor is above the rectangle
+                   .on('mouseover', tip.show)
+                   .on('mouseout', tip.hide);
+
+                // create x axis and call x axis variable
+                svg.append("g")
+                   .attr("class", "axis")
+                   .attr("transform", "translate(0," + (height + margin.top) + ")")
+                   .call(xAxis)
+
+                   // rotate and position labels on x axis
+                   // inspired by: https://bl.ocks.org/mbostock/4403522
+                   .selectAll("text")
+                   .attr("y", 5)
+                   .attr("x", 7)
+                   .attr("transform", "rotate(45)")
+                   .style("text-anchor", "start");
+
+                // create y axis and call y axis variable
+                svg.append("g")
+                   .attr("class", "axis")
+                   .attr("transform", "translate(" + margin.left + ",0)")
+                   .call(yAxis);
+            });
+
+            // write name for x axis
+           svg.append("text")
+              .attr("y", fullHeight - 10)
+              .attr("x", margin.left + width / 2)
+              .style("text-anchor", "middle")
+              .style("font-size", "20px")
+              .text("Doodsoorzaak");
+
+            // write name for y axis
+            svg.append("text")
+               .attr("transform", "rotate(-90)")
+               .attr("y", margin.left / 2)
+               .attr("x", margin.top - height / 2)
+               .style("text-anchor", "middle")
+               .style("font-size", "20px")
+               .text("Aantal overledenen");
+        </script>
+    </body>
+</html>
