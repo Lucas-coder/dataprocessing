@@ -1,7 +1,36 @@
-.bar {
+#container {
+    width: 1200px;
+}
+
+path:hover {
+  fill: rgba(8, 81, 156, 0.2);
+  cursor:pointer;
+}
+
+.mapBar {
     fill: rgb(0, 20, 137);
 }
 
-.bar:hover {
+.mapBar:hover {
     fill: rgb(254, 221, 0);
+    cursor: pointer;
+}
+
+.bar {
+    fill: #4d708c;
+}
+
+.bar:hover {
+    fill: #83b5c1;
+}
+
+.toolTip {
+    position: absolute;
+    display: none;
+    min-width: 80px;
+    height: auto;
+    background: none repeat scroll 0 0 #ffffff;
+    border: 1px solid #6F257F;
+    padding: 14px;
+    text-align: center;
 }
