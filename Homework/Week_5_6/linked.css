@@ -1,14 +1,25 @@
 #container {
-    width: 1200px;
+    width: 1210px;
 }
 
-path:hover {
+.map {
+    border: 1px solid #002395;
+}
+
+#mapTitle {
+    font-family: Calibri;
+    font-size: 40px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+
+.union:hover {
   fill: rgba(8, 81, 156, 0.2);
   cursor:pointer;
 }
 
-.mapBar {
-    fill: rgb(0, 20, 137);
+.notUnion {
+    fill: lightgrey;
 }
 
 .mapBar:hover {
@@ -30,7 +41,7 @@ path:hover {
     min-width: 80px;
     height: auto;
     background: none repeat scroll 0 0 #ffffff;
-    border: 1px solid #6F257F;
+    border: 1px solid #002395;
     padding: 14px;
     text-align: center;
 }
