@@ -8,15 +8,32 @@
 
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="https://d3js.org/topojson.v2.min.js"></script>
-        <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> -->
+        <script type="text/javascript" src="legend.js"></script>
         <script type="text/javascript" src="linked.js"></script>
 
         <link rel="stylesheet" type="text/css" href="linked.css">
+        <link rel="stylesheet" type="text/css" href="linkedMap.css">
+        <link rel="stylesheet" type="text/css" href="linkedBar.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
         <title>EU deaths neurological diseases</title>
     </head>
 
     <body>
+        <div class="navbar">
+            <div class="dropdown">
+                <button class="dropbtn">Select data
+                    <i class="fa fa-caret-down"></i>
+                </button>
+                <div class="dropdown-content">
+                    <a class="update" value="pop" href="#population">Population</a>
+                    <a class="update" value="mort" href="#mortality">Mortality rate</a>
+                </div>
+            </div>
+            <a href="#home">Background story</a>
+            <a href="#news">Design process</a>
+        </div>
+
         <h1 class="info">Look at this map!</h1>
         <div id="container"></div>
     </body>

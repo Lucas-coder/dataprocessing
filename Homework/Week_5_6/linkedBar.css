@@ -1,0 +1,23 @@
+#barTitle {
+    font-size: 18px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+
+#barSubtitle {
+    font-size: 15px;
+    text-anchor: middle;
+}
+
+.axisText {
+  font-size: 15px;
+  text-anchor: middle;
+}
+
+.bar {
+    fill: #4d708c;
+}
+
+.bar:hover {
+    fill: #83b5c1;
+}

@@ -24,12 +24,8 @@ window.onload = function() {
           var perCountry = JSON.parse(result[1].responseText);
           var perDisease = JSON.parse(result[2].responseText);
 
-          // var pops = convertData(popData, 1);
           var mapData = convertData(perCountry, popData, 1);
           var barData = convertData(perDisease, popData, 2);
-
-          console.log(perCountry);
-          console.log(popData);
 
           drawMap(mapData, barData);
           drawBarchart(barData);
@@ -38,97 +34,151 @@ window.onload = function() {
 
 
 function drawMap(mapData, barData) {
+/**
+*
+* Outline from: https://bl.ocks.org/MariellaCC/0055298b94fcf2c16940
+*/
 
-    var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+    // create tooltip
+    // based on: https://bl.ocks.org/alandunning/274bf248fd0f362d64674920e85c1eb7
+    var tooltip = d3.select("body")
+                    .append("div")
+                    .attr("class", "toolTip")
+                    .attr("id", "mapTip");
 
-    // Width and height
+    // determine map dimensions
     var w = 800;
     var h = 600;
 
-    // console.log(Object.values(mapData).total);
-    var valuesTotal = [];
-    Object.values(mapData).forEach(function(element) {
-       Object.values(element).forEach(function(number) {
-           valuesTotal.push(number);
-       });
-    });
-
-    console.log(valuesTotal);
-
-    var totalMin = d3.min(valuesTotal);
-    var totalMax = d3.max(valuesTotal);
-
-    var cScale = d3.scaleSequential(d3.interpolateCool)
-                       .domain([totalMax, totalMin]);
-
-    //Define map projection
-    var projection = d3.geoMercator()
-                       .center([ 13, 56 ])
-                       .translate([ w/2, h/2 ])
-                       .scale([ w/1.5 ]);
-
-    //Define path generator
-    var path = d3.geoPath()
-                 .projection(projection);
-
-    //Create SVG
-    var svg = d3.select("#container")
+    // create svg
+    var svgMap = d3.select("#container")
                 .append("svg")
-                .attr("class", "map")
+                .attr("id", "map")
                 .attr("width", w)
                 .attr("height", h);
 
-    svg.append("text")
-       .attr("id", "mapTitle")
-       .attr("y", 40)
-       .attr("x", w / 4)
-       .text("EU map");
+    // write map title
+    svgMap.append("text")
+          .attr("id", "mapTitle")
+          .attr("y", 40)
+          .attr("x", w / 4)
+          .text("EU mortality rate to neurological diseases in 2015");
 
-    //Load in GeoJSON data
+    // write map subtitle
+    svgMap.append("text")
+          .attr("id", "mapSubtitle")
+          .attr("y", 55)
+          .attr("x", w / 4)
+          .text("per 1000 population");
+
+    // var totalMin = d3.min(Object.values(mapData), function(d) {
+    //     return d.scaled;
+    // });
+    var rateMax = d3.max(Object.values(mapData), function(d) {
+        return d.scaled;
+    });
+
+    var cScaleRate = d3.scaleSequential(d3.interpolateCool)
+                       .domain([rateMax, 0]);
+
+    var populationData = Object.values(mapData);
+    populationData.splice(11, 1);
+
+    var popMax = d3.max(populationData, function(d) {
+       return d.population;
+    });
+
+    var cScalePop = d3.scaleSequential(d3.interpolateCool)
+                      .domain([popMax, 0]);
+
+    // define map projection
+    var projection = d3.geoMercator()
+                       .center([ 13, 56 ])
+                       .translate([ w / 2, h / 2 ])
+                       .scale([ w / 1.5 ]);
+
+    // define path generator
+    var path = d3.geoPath()
+                 .projection(projection);
+
+    createLegend(cScaleRate);
+
+    // load in GeoJSON data
     d3.json("eu_geo.json", function(json) {
 
-        //Bind data and create one path per GeoJSON feature
-        svg.selectAll("path")
-           .data(json.features)
-           .enter()
-           .append("path")
-           .attr("d", path)
-           .attr("class", function(d){
-               if ((Object.keys(mapData)).indexOf(d.properties.name_long) == -1) {
-                   return "notUnion";
-               }
-               else {
-                   return "union";
-               };
-           })
-           .attr("stroke", "rgba(8, 81, 156, 0.2)");
+        // bind data and create one path per GeoJSON feature
+        svgMap.selectAll("path")
+              .data(json.features)
+              .enter()
+              .append("path")
+              .attr("d", path)
 
-        svg.selectAll(".union")
-           .attr("fill", function(d) {
-               return cScale(mapData[d.properties.name_long].total);
-           })
-           .on("mousemove", function(d) {
-               tooltip
-                 .style("left", d3.event.pageX - 50 + "px")
-                 .style("top", d3.event.pageY - 70 + "px")
-                 .style("display", "inline-block")
-                 .html(d.properties.name_long + "<br>" + "Total: " +
-                     mapData[d.properties.name_long].total);
-           })
-           .on("mouseout", function(d) { tooltip.style("display", "none"); })
-           .on("click", function(d) {
-               updateChart(barData, d.properties.name_long);
-           });
+              // determine class based on whether data of country is available
+              .attr("class", function(d){
+                  if ((Object.keys(mapData)).indexOf(d.properties.name_long) == -1) {
+                      return "notUnion";
+                  }
+                  else {
+                      return "union";
+                  };
+              })
+              .attr("stroke", "rgba(8, 81, 156, 0.2)");
 
-        svg.selectAll(".notUnion")
-           .on("mousemove", function(d) {
-               tooltip
-                 .style("left", d3.event.pageX - 50 + "px")
-                 .style("top", d3.event.pageY - 70 + "px")
-                 .style("display", "inline-block")
-                 .html(d.properties.name_long + "<br>" + "No data");
-            })
-            .on("mouseout", function(d) { tooltip.style("display", "none");});
+        d3.selectAll(".union")
+              .attr("fill", function(d) {
+                  return cScaleRate(mapData[d.properties.name_long].scaled);
+              })
+              .on("mousemove", function(d) {
+                  tooltip
+                      .style("left", d3.event.pageX - 50 + "px")
+                      .style("top", d3.event.pageY - 90 + "px")
+                      .style("display", "inline-block")
+                      .html(d.properties.name_long + "<br>" + "Population: " +
+                          mapData[d.properties.name_long].population + "<br>" +
+                          "Rate: " + mapData[d.properties.name_long].scaled);
+              })
+              .on("mouseout", function(d) { tooltip.style("display", "none"); })
+              .on("click", function(d) {
+                  updateChart(barData, d.properties.name_long);
+              });
+
+        d3.selectAll(".notUnion")
+              .on("mousemove", function(d) {
+                  tooltip
+                      .style("left", d3.event.pageX - 50 + "px")
+                      .style("top", d3.event.pageY - 70 + "px")
+                      .style("display", "inline-block")
+                      .html(d.properties.name_long + "<br>" + "No data");
+              })
+              .on("mouseout", function(d) { tooltip.style("display", "none"); });
+
+        d3.selectAll(".update")
+          .on("click", function(d) {
+              var choice = this.getAttribute("value");
+
+              if (choice == "mort") {
+                  d3.select("#mapTitle")
+                    .text("EU mortality rate to neurological diseases in 2015");
+                  d3.select("#mapSubtitle")
+                    .text("per 1000 population");
+
+                  d3.selectAll(".union")
+                    .attr("fill", function(d) {
+                        return cScaleRate(mapData[d.properties.name_long].scaled);
+                    });
+              }
+              else if (choice == "pop") {
+                  d3.select("#mapTitle")
+                    .text("EU populations on Januari 1 2015");
+                  d3.select("#mapSubtitle")
+                    .text(" ");
+
+                  d3.selectAll(".union")
+                    .attr("fill", function(d) {
+                        return cScalePop(mapData[d.properties.name_long].population);
+                    });
+              };
+          });
     });
 };
 
@@ -138,7 +188,7 @@ function drawBarchart(barData) {
     var fullWidthChart = 400;
     var fullHeightChart = 300;
 
-    var margin = {top: 10, right: 75, bottom: 125, left: 50};
+    var margin = { top: 50, right: 0, bottom: 80, left: 80 };
 
     var width = fullWidthChart - margin.left - margin.right;
     var height = fullHeightChart - margin.top - margin.bottom;
@@ -149,7 +199,38 @@ function drawBarchart(barData) {
                      .attr("width", fullWidthChart)
                      .attr("height", fullHeightChart);
 
-    var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+    // write barchart title
+    svgChart.append("text")
+            .attr("id", "barTitle")
+            .attr("y", 30)
+            .attr("x", margin.left + width / 2)
+            .text("European Union");
+
+    // write barchart subtitle
+    svgChart.append("text")
+            .attr("id", "barSubtitle")
+            .attr("y", 45)
+            .attr("x", margin.left + width / 2)
+            .text("mortality rate per disease");
+
+    // write barchart x axis name
+    svgChart.append("text")
+            .attr("class", "axisText")
+            .attr("y", fullHeightChart - margin.bottom / 2)
+            .attr("x", margin.left + width / 2)
+            .text("Neurological disease");
+
+    // write barchart y axis name
+    svgChart.append("text")
+            .attr("class", "axisText")
+            .attr("transform", "rotate(-90)")
+            .attr("y", margin.left / 2)
+            .attr("x", -(height / 2) - margin.top)
+            .text("Mortality rate (per 1000 population)");
+
+    var tooltip = d3.select("body").append("div")
+                    .attr("class", "toolTip")
+                    .attr("id", "barTip");
 
     var country = barData["European Union"];
 
@@ -168,10 +249,9 @@ function drawBarchart(barData) {
     var deathsMin = d3.min(valuesDeaths);
     var deathsMax = d3.max(valuesDeaths);
 
-    var yScale = d3.scaleLog()
-                   .domain([deathsMin, deathsMax])
-                   .range([height + margin.top, margin.top])
-                   .nice();
+    var yScale = d3.scaleLinear()
+                   .domain([0, deathsMax])
+                   .range([height + margin.top, margin.top]);
 
     // create x axis variable and put at bottom
     var xAxis = d3.axisBottom(xScale);
@@ -217,24 +297,26 @@ function drawBarchart(barData) {
                   .style("left", d3.event.pageX - 50 + "px")
                   .style("top", d3.event.pageY - 70 + "px")
                   .style("display", "inline-block")
-                  .html((d) + "<br>" + "Deaths: " + (country[d]));
+                  .html((d) + "<br>" + "Rate: " + (country[d]));
             })
-            .on("mouseout", function(d) { tooltip.style("display", "none");});
+            .on("mouseout", function(d) { tooltip.style("display", "none"); });
 };
 
 
 function updateChart(barData, countryClick) {
-    console.log(countryClick);
 
     var fullWidthChart = 400;
     var fullHeightChart = 300;
 
-    var margin = {top: 10, right: 75, bottom: 125, left: 50};
+    var margin = { top: 50, right: 0, bottom: 80, left: 80 };
 
     var width = fullWidthChart - margin.left - margin.right;
     var height = fullHeightChart - margin.top - margin.bottom;
 
-    var tooltip = d3.select("body").select(".toolTip");
+    d3.select("#container").select("#barchart").select("#barTitle")
+      .text(countryClick);
+
+    var tooltip = d3.select("body").select("#barTip");
 
     var country = barData[countryClick];
 
@@ -253,37 +335,56 @@ function updateChart(barData, countryClick) {
     var deathsMin = d3.min(valuesDeaths);
     var deathsMax = d3.max(valuesDeaths);
 
-    var yScale = d3.scaleLog()
-                   .domain([deathsMin, deathsMax])
-                   .range([height + margin.top, margin.top])
-                   .nice();
+    var yScale = d3.scaleLinear()
+                   .domain([0, deathsMax])
+                   .range([height + margin.top, margin.top]);
 
-    d3.select("#container").select("#barchart").selectAll(".bar")
-      .transition()
-      .duration(700)
-      .attr("x", function(d) {
-          return xScale(d);
-      })
-      .attr("y", function(d) {
-          return yScale(country[d]);
-      })
+    var bars = d3.select("#container").select("#barchart").selectAll(".bar");
 
-      // determine dimensions of each rectangle
-      .attr("width", function(d) {
-          return xScale.bandwidth();
-      })
-      .attr("height", function(d) {
-          return height + margin.top - yScale(country[d])
-      })
-      .on("mousemove", function(d) {
-          tooltip
-            .style("left", d3.event.pageX - 50 + "px")
-            .style("top", d3.event.pageY - 70 + "px")
-            .style("display", "inline-block")
-            .html((d) + "<br>" + "Deaths: " + (country[d]));
-      })
-      .on("mouseout", function(d) { tooltip.style("display", "none");});
+    bars.transition()
+        .duration(700)
+        .attr("x", function(d) {
+            return xScale(d);
+        })
+        .attr("y", function(d) {
+            return yScale(country[d]);
+        })
 
+        // determine dimensions of each rectangle
+        .attr("width", function(d) {
+            return xScale.bandwidth();
+        })
+        .attr("height", function(d) {
+            return height + margin.top - yScale(country[d])
+        });
+
+    bars.on("mousemove", function(d) {
+            tooltip
+              .style("left", d3.event.pageX - 50 + "px")
+              .style("top", d3.event.pageY - 70 + "px")
+              .style("display", "inline-block")
+              .html((d) + "<br>" + "Rate: " + (country[d]));
+        })
+        .on("mouseout", function(d) { tooltip.style("display", "none"); });
+
+};
+
+function createLegend(cScale) {
+
+    var svg = d3.select("#map");
+
+    svg.append("g")
+       .attr("class", "legend")
+       .attr("transform", "translate(20,200)");
+
+    var legend = d3.legendColor()
+                   .shapeWidth(30)
+                   .cells(10)
+                   .orient("vertical")
+                   .scale(cScale);
+
+    svg.select(".legend")
+       .call(legend);
 };
 
 
@@ -305,7 +406,9 @@ function convertData(dataset, popData, choice) {
         var data = {};
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
-            object.total = dataset.value[i];
+            object.deaths = dataset.value[i];
+            object.population = popData.value[i];
+            object.scaled = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
         };
     }
 
@@ -313,9 +416,11 @@ function convertData(dataset, popData, choice) {
         var data = {};
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
-            object.Parkinson = dataset.value[i];
-            object.Alzheimer = dataset.value[i + dataset.size[5]];
-            object.Other = dataset.value[i + 3 * dataset.size[5]];
+            object.Parkinson = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
+            object.Alzheimer = +((dataset.value[i + dataset.size[5]] /
+                popData.value[i]) * 1000).toFixed(2);
+            object.Other = +((dataset.value[i + 3 * dataset.size[5]] /
+                popData.value[i]) * 1000).toFixed(2);
         };
     };
 
