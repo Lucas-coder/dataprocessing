@@ -1,18 +1,21 @@
 /**
 * Lucas Lumeij - 10353062
-* Voor vervolg: ik wil graag dat elk EU-land in de kaart een waarde krijgt die
-* het totaal aantal doden (aan neurologische aandoeningen) aangeeft. Dit staat
-* in dataset countries. In drawMap staat dit als barchart uitgecomment.
-* Verder worstel ik het met het hergebruiken van variabelen in de updateChart
-* functie om een nieuwe barchart met, bijvoorbeeld, dezelfde scales te kunnen maken.
+*
+* This script supports linked.html to show a linked view with a map of Europe
+* and a barchart depicting the data of a selected country.
 */
 
 window.onload = function() {
+/**
+* The data is loaded and the code starts running when the html page is loaded.
+*/
 
+    // API request used data
     var populations = "http://ec.europa.eu/eurostat/wdds/rest/data/v2.1/json/en/tps00001?geo=AT&geo=BE&geo=BG&geo=CH&geo=CY&geo=CZ&geo=DE&geo=DK&geo=EE&geo=EL&geo=ES&geo=EU28&geo=FI&geo=FR&geo=HR&geo=HU&geo=IE&geo=IS&geo=IT&geo=LI&geo=LT&geo=LU&geo=LV&geo=MT&geo=NL&geo=NO&geo=PL&geo=PT&geo=RO&geo=RS&geo=SE&geo=SI&geo=SK&geo=TR&geo=UK&precision=1&time=2015&indic_de=JAN";
     var countries = "https://ec.europa.eu/eurostat/wdds/rest/data/v2.1/json/en/hlth_cd_aro?sex=T&geo=AT&geo=BE&geo=BG&geo=CH&geo=CY&geo=CZ&geo=DE&geo=DK&geo=EE&geo=EL&geo=ES&geo=FI&geo=FR&geo=HR&geo=HU&geo=IE&geo=IS&geo=IT&geo=LI&geo=LT&geo=LU&geo=LV&geo=MT&geo=NL&geo=NO&geo=PL&geo=PT&geo=RO&geo=RS&geo=SE&geo=SI&geo=SK&geo=TR&geo=UK&geo=EU28&resid=TOT_RESID&precision=1&unit=NR&time=2015&age=TOTAL&icd10=G_H";
     var diseases = "https://ec.europa.eu/eurostat/wdds/rest/data/v2.1/json/en/hlth_cd_aro?sex=T&geo=AT&geo=BE&geo=BG&geo=CH&geo=CY&geo=CZ&geo=DE&geo=DK&geo=EE&geo=EL&geo=ES&geo=FI&geo=FR&geo=HR&geo=HU&geo=IE&geo=IS&geo=IT&geo=LI&geo=LT&geo=LU&geo=LV&geo=MT&geo=NL&geo=NO&geo=PL&geo=PT&geo=RO&geo=RS&geo=SE&geo=SI&geo=SK&geo=TR&geo=UK&geo=EU28&resid=TOT_RESID&precision=1&unit=NR&time=2015&age=TOTAL&icd10=G20&icd10=G30&icd10=G_H&icd10=G_H_OTH";
 
+    // start running when all data is received
     d3.queue()
       .defer(d3.request, populations)
       .defer(d3.request, countries)
@@ -62,7 +65,7 @@ function drawMap(mapData, barData) {
           .attr("id", "mapTitle")
           .attr("y", 40)
           .attr("x", w / 4)
-          .text("EU mortality rate to neurological diseases in 2015");
+          .text("EU mortality rate from neurological diseases in 2015");
 
     // write map subtitle
     svgMap.append("text")
@@ -71,9 +74,15 @@ function drawMap(mapData, barData) {
           .attr("x", w / 4)
           .text("per 1000 population");
 
-    // var totalMin = d3.min(Object.values(mapData), function(d) {
-    //     return d.scaled;
-    // });
+    svgMap.append("text")
+          .attr("id", "mapSource")
+          .attr("y", 70)
+          .attr("x", w / 4)
+          .text("Source: eurostat")
+          .on("click", function() {
+              window.open("https://ec.europa.eu/eurostat/data");
+          });
+
     var rateMax = d3.max(Object.values(mapData), function(d) {
         return d.scaled;
     });
@@ -88,8 +97,10 @@ function drawMap(mapData, barData) {
        return d.population;
     });
 
+    // determine population color scale, max value rounded to pretty number
+    factor = Math.pow(10, -2);
     var cScalePop = d3.scaleSequential(d3.interpolateCool)
-                      .domain([popMax, 0]);
+                      .domain([Math.round(popMax * factor) / factor, 0]);
 
     // define map projection
     var projection = d3.geoMercator()
@@ -158,22 +169,32 @@ function drawMap(mapData, barData) {
 
               if (choice == "mort") {
                   d3.select("#mapTitle")
-                    .text("EU mortality rate to neurological diseases in 2015");
+                    .text("EU mortality rate from neurological diseases in 2015");
                   d3.select("#mapSubtitle")
                     .text("per 1000 population");
 
+                  d3.select("#legend").remove();
+                  createLegend(cScaleRate);
+
                   d3.selectAll(".union")
+                    .transition()
+                    .duration(1500)
                     .attr("fill", function(d) {
                         return cScaleRate(mapData[d.properties.name_long].scaled);
                     });
               }
               else if (choice == "pop") {
                   d3.select("#mapTitle")
-                    .text("EU populations on Januari 1 2015");
+                    .text("EU population on 1 January 2015");
                   d3.select("#mapSubtitle")
-                    .text(" ");
+                    .text("times million");
+
+                  d3.select("#legend").remove();
+                  createLegend(cScalePop);
 
                   d3.selectAll(".union")
+                    .transition()
+                    .duration(1500)
                     .attr("fill", function(d) {
                         return cScalePop(mapData[d.properties.name_long].population);
                     });
@@ -186,7 +207,7 @@ function drawMap(mapData, barData) {
 function drawBarchart(barData) {
 
     var fullWidthChart = 400;
-    var fullHeightChart = 300;
+    var fullHeightChart = 550;
 
     var margin = { top: 50, right: 0, bottom: 80, left: 80 };
 
@@ -202,16 +223,25 @@ function drawBarchart(barData) {
     // write barchart title
     svgChart.append("text")
             .attr("id", "barTitle")
-            .attr("y", 30)
+            .attr("y", 15)
             .attr("x", margin.left + width / 2)
             .text("European Union");
 
     // write barchart subtitle
     svgChart.append("text")
             .attr("id", "barSubtitle")
-            .attr("y", 45)
+            .attr("y", 30)
             .attr("x", margin.left + width / 2)
             .text("mortality rate per disease");
+
+    svgChart.append("text")
+            .attr("id", "barSource")
+            .attr("y", 45)
+            .attr("x", margin.left + width / 2)
+            .text("Source: eurostat")
+            .on("click", function() {
+                window.open("https://ec.europa.eu/eurostat/data");
+            });
 
     // write barchart x axis name
     svgChart.append("text")
@@ -306,7 +336,7 @@ function drawBarchart(barData) {
 function updateChart(barData, countryClick) {
 
     var fullWidthChart = 400;
-    var fullHeightChart = 300;
+    var fullHeightChart = 550;
 
     var margin = { top: 50, right: 0, bottom: 80, left: 80 };
 
@@ -342,7 +372,7 @@ function updateChart(barData, countryClick) {
     var bars = d3.select("#container").select("#barchart").selectAll(".bar");
 
     bars.transition()
-        .duration(700)
+        .duration(1000)
         .attr("x", function(d) {
             return xScale(d);
         })
@@ -366,24 +396,24 @@ function updateChart(barData, countryClick) {
               .html((d) + "<br>" + "Rate: " + (country[d]));
         })
         .on("mouseout", function(d) { tooltip.style("display", "none"); });
-
 };
+
 
 function createLegend(cScale) {
 
     var svg = d3.select("#map");
 
     svg.append("g")
-       .attr("class", "legend")
+       .attr("id", "legend")
        .attr("transform", "translate(20,200)");
 
     var legend = d3.legendColor()
                    .shapeWidth(30)
-                   .cells(10)
+                   .cells(11)
                    .orient("vertical")
                    .scale(cScale);
 
-    svg.select(".legend")
+    svg.select("#legend")
        .call(legend);
 };
 
@@ -407,7 +437,7 @@ function convertData(dataset, popData, choice) {
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
             object.deaths = dataset.value[i];
-            object.population = popData.value[i];
+            object.population = +(popData.value[i] / 1000000).toFixed(2);
             object.scaled = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
         };
     }

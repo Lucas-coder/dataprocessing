@@ -9,15 +9,26 @@
     text-anchor: middle;
 }
 
+#barSource {
+    font-size: 15px;
+    text-anchor: middle;
+    fill: rgb(0, 0, 255);
+}
+
+#barSource:hover {
+    cursor: pointer;
+    opacity: 0.5;
+}
+
 .axisText {
   font-size: 15px;
   text-anchor: middle;
 }
 
 .bar {
-    fill: #4d708c;
+    fill: rgb(77, 112, 140);
 }
 
 .bar:hover {
-    fill: #83b5c1;
+    opacity: 0.5;
 }
