@@ -1,3 +1,10 @@
+/**
+* Lucas Lumeij - 10353062
+*
+* This css determines the style of the elements that are associated with the map
+* visualization on linked.html.
+*/
+
 #map {
     border: 1px solid rgb(0, 20, 137);
 }
