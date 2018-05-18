@@ -154,6 +154,8 @@ function drawMap(mapData, barData) {
                           "Rate: " + mapData[d.properties.name_long].scaled);
               })
               .on("mouseout", function(d) { tooltip.style("display", "none"); })
+
+              // when clicked, update barchart with data from that country
               .on("click", function(d) {
                   updateChart(barData, d.properties.name_long);
               });
@@ -171,7 +173,7 @@ function drawMap(mapData, barData) {
 
         // when dropdown buttons clicked, update map accordingly
         d3.selectAll(".update")
-          .on("click", function(d) {
+          .on("click", function() {
               var choice = this.getAttribute("value");
 
               // when mortality rate info is selected...
@@ -262,7 +264,7 @@ function drawBarchart(barData) {
             .attr("x", margin.left + width / 2)
             .text("Source: eurostat")
 
-            // http works, https doesn't for this website
+            // for this website http works, https doesn't
             .on("click", function() {
                 window.open("https://ec.europa.eu/eurostat/data");
             });
@@ -288,14 +290,16 @@ function drawBarchart(barData) {
                     .attr("class", "toolTip")
                     .attr("id", "barTip");
 
-
+    // for initial screen, barchart shows data for EU total
     var country = barData["European Union"];
 
+    // make scale for x axis (disease types)
     var xScale = d3.scaleBand()
                    .domain((Object.keys(country)).map(function(d) { return d; }))
                    .range([margin.left, width + margin.left])
                    .padding(0.1);
 
+    // create list with mortality rates from each country and disease type together
     var valuesDeaths = [];
     Object.values(barData).forEach(function(element) {
        Object.values(element).forEach(function(number) {
@@ -303,9 +307,11 @@ function drawBarchart(barData) {
        });
     });
 
+    // get min and max value from the list above
     var deathsMin = d3.min(valuesDeaths);
     var deathsMax = d3.max(valuesDeaths);
 
+    // y scale is the same for every bar chart to depict differences clearly
     var yScale = d3.scaleLinear()
                    .domain([0, deathsMax])
                    .range([height + margin.top, margin.top]);
@@ -317,11 +323,13 @@ function drawBarchart(barData) {
     var yAxis = d3.axisLeft(yScale)
                   .ticks(7);
 
+    // draw x axis
     svgChart.append("g")
             .attr("class", "axis")
             .attr("transform", "translate(0," + (height + margin.top) + ")")
             .call(xAxis);
 
+    // draw y axis
     svgChart.append("g")
             .attr("class", "axis")
             .attr("transform", "translate(" + margin.left + ",0)")
@@ -349,6 +357,8 @@ function drawBarchart(barData) {
             .attr("height", function(d) {
                 return height + margin.top - yScale(country[d])
             })
+
+            // show and hide tooltip when hovering over bar
             .on("mousemove", function(d) {
                 tooltip
                   .style("left", d3.event.pageX - 50 + "px")
@@ -361,27 +371,34 @@ function drawBarchart(barData) {
 
 
 function updateChart(barData, countryClick) {
+/**
+* This function updates the barchart based on which country is clicked.
+*/
 
+    // determine dimensions again (namely, not global)
     var fullWidthChart = 400;
     var fullHeightChart = 550;
-
     var margin = { top: 50, right: 0, bottom: 80, left: 80 };
-
     var width = fullWidthChart - margin.left - margin.right;
     var height = fullHeightChart - margin.top - margin.bottom;
 
+    // update title of chart based on selected country
     d3.select("#container").select("#barchart").select("#barTitle")
       .text(countryClick);
 
+    // select tooltip that is already made
     var tooltip = d3.select("body").select("#barTip");
 
+    // select specific country data from dataset
     var country = barData[countryClick];
 
+    // determine scale x axis again
     var xScale = d3.scaleBand()
                    .domain((Object.keys(country)).map(function(d) { return d; }))
                    .range([margin.left, width + margin.left])
                    .padding(0.1);
 
+    // determine scale y axis again (more explanation in drawBarchart)
     var valuesDeaths = [];
     Object.values(barData).forEach(function(element) {
        Object.values(element).forEach(function(number) {
@@ -396,8 +413,10 @@ function updateChart(barData, countryClick) {
                    .domain([0, deathsMax])
                    .range([height + margin.top, margin.top]);
 
+    // select already drawn bars
     var bars = d3.select("#container").select("#barchart").selectAll(".bar");
 
+    // update dimensions of all bars
     bars.transition()
         .duration(1000)
         .attr("x", function(d) {
@@ -406,8 +425,6 @@ function updateChart(barData, countryClick) {
         .attr("y", function(d) {
             return yScale(country[d]);
         })
-
-        // determine dimensions of each rectangle
         .attr("width", function(d) {
             return xScale.bandwidth();
         })
@@ -415,6 +432,7 @@ function updateChart(barData, countryClick) {
             return height + margin.top - yScale(country[d])
         });
 
+    // update tooltip
     bars.on("mousemove", function(d) {
             tooltip
               .style("left", d3.event.pageX - 50 + "px")
@@ -427,9 +445,14 @@ function updateChart(barData, countryClick) {
 
 
 function createLegend(cScale) {
+/**
+* This function creates a legend in the map based on the scale input.
+*/
 
+    // select the map
     var svg = d3.select("#map");
 
+    // 
     svg.append("g")
        .attr("id", "legend")
        .attr("transform", "translate(20,200)");

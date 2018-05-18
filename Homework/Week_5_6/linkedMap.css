@@ -10,18 +10,18 @@
 }
 
 #mapTitle {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: bold;
     text-anchor: middle;
 }
 
 #mapSubtitle {
-    font-size: 15px;
+    font-size: 13px;
     text-anchor: middle;
 }
 
 #mapSource {
-    font-size: 15px;
+    font-size: 13px;
     text-anchor: middle;
     fill: rgb(0, 0, 255);
 }

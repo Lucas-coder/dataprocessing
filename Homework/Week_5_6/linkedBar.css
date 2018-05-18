@@ -27,6 +27,10 @@
     opacity: 0.5;
 }
 
+.axis {
+    font-size: 13px;
+}
+
 .axisText {
   font-size: 15px;
   text-anchor: middle;
