@@ -80,6 +80,8 @@ function drawMap(mapData, barData) {
           .attr("y", 70)
           .attr("x", w / 4)
           .text("Source: eurostat")
+
+          // for this website http works, https doesn't
           .on("click", function() {
               window.open("https://ec.europa.eu/eurostat/data");
           });
@@ -229,7 +231,7 @@ function drawBarchart(barData) {
 * This function draws the initial barchart with EU data.
 */
 
-    // determine dimensions and margin of chart
+    // determine dimensions and margin of barchart
     var fullWidthChart = 400;
     var fullHeightChart = 550;
     var margin = { top: 50, right: 0, bottom: 80, left: 80 };
@@ -307,8 +309,7 @@ function drawBarchart(barData) {
        });
     });
 
-    // get min and max value from the list above
-    var deathsMin = d3.min(valuesDeaths);
+    // get max value from list above
     var deathsMax = d3.max(valuesDeaths);
 
     // y scale is the same for every bar chart to depict differences clearly
@@ -452,23 +453,28 @@ function createLegend(cScale) {
     // select the map
     var svg = d3.select("#map");
 
-    // 
+    // put object in map that will contain legend
     svg.append("g")
        .attr("id", "legend")
        .attr("transform", "translate(20,200)");
 
+    // design legend
     var legend = d3.legendColor()
                    .shapeWidth(30)
                    .cells(11)
                    .orient("vertical")
                    .scale(cScale);
 
+    // draw legend
     svg.select("#legend")
        .call(legend);
 };
 
 
 function convertData(dataset, popData, choice) {
+/**
+* This function structures the imported data into usable datasets.
+*/
 
     // give two labels shorter names
     dataset.dimension.geo.category.label.DE = "Germany";
@@ -476,26 +482,35 @@ function convertData(dataset, popData, choice) {
     popData.dimension.geo.category.label.DE = "Germany";
     popData.dimension.geo.category.label.EU28 = "European Union";
 
+    // put all country names in a list
     var countryList = [];
     for (let key in dataset.dimension.geo.category.label) {
         var name = dataset.dimension.geo.category.label[key];
         countryList.push(name);
     };
 
+    // structure data for map
     if (choice == 1) {
         var data = {};
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
             object.deaths = dataset.value[i];
+
+            // convert population data to smaller, more readable numbers
             object.population = +(popData.value[i] / 1000000).toFixed(2);
+
+            // convert total deaths to mortality rate
             object.scaled = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
         };
     }
 
+    // structure data for bar chart
     else if (choice == 2) {
         var data = {};
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
+
+            // convert deaths for each type to mortality rate
             object.Parkinson = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
             object.Alzheimer = +((dataset.value[i + dataset.size[5]] /
                 popData.value[i]) * 1000).toFixed(2);

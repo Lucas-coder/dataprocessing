@@ -1,7 +1,7 @@
 <!--
 Lucas Lumeij - 10353062
 
-Here, the pdf explaining the design choices is shown. 
+Here, the pdf explaining the design choices is shown.
 -->
 
 <!DOCTYPE html>
@@ -10,21 +10,28 @@ Here, the pdf explaining the design choices is shown.
     <head>
         <meta charset="utf-8">
 
+        <!-- import external and own css files -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <link rel="stylesheet" type="text/css" href="story.css">
         <link rel="stylesheet" type="text/css" href="linked.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+        <!-- make favicon -->
+        <link rel="icon" href="flag.png">
 
         <title>EU mortality story</title>
-        <link rel="icon" href="flag.png">
+
     </head>
 
     <body>
+
+        <!-- make navbar: https://www.w3schools.com/howto/howto_css_dropdown.asp -->
         <div class="navbar">
             <a href="linked.html">Back to map</a>
             <a href="story.html">Background story</a>
             <a href="design.html">Design process</a>
         </div>
 
+        <!-- way to show pdf file in html -->
         <object id="designProcess" data="design.pdf"></object>
     </body>
 </html>
