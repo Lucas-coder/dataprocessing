@@ -23,13 +23,16 @@ window.onload = function() {
       .awaitAll(function(error, result) {
           if (error) throw error;
 
+          // parse json strings to make them usable
           var popData = JSON.parse(result[0].responseText);
           var perCountry = JSON.parse(result[1].responseText);
           var perDisease = JSON.parse(result[2].responseText);
 
+          // call function to structure parsed json strings
           var mapData = convertData(perCountry, popData, 1);
           var barData = convertData(perDisease, popData, 2);
 
+          // call functions to make the visualization
           drawMap(mapData, barData);
           drawBarchart(barData);
       });
@@ -407,7 +410,6 @@ function updateChart(barData, countryClick) {
        });
     });
 
-    var deathsMin = d3.min(valuesDeaths);
     var deathsMax = d3.max(valuesDeaths);
 
     var yScale = d3.scaleLinear()
@@ -510,7 +512,7 @@ function convertData(dataset, popData, choice) {
         for (let i = 0; i < dataset.size[5]; i++) {
             var object = data[countryList[i]] = {};
 
-            // convert deaths for each type to mortality rate
+            // convert deaths for each disease type to mortality rate
             object.Parkinson = +((dataset.value[i] / popData.value[i]) * 1000).toFixed(2);
             object.Alzheimer = +((dataset.value[i + dataset.size[5]] /
                 popData.value[i]) * 1000).toFixed(2);
